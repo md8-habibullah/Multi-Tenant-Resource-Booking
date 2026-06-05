@@ -4,7 +4,7 @@ import { Organization } from '../src/modules/organizations/model';
 import { Resource } from '../src/modules/resources/model';
 import { Booking } from '../src/modules/bookings/model';
 import { User, Role } from '../src/modules/auth/model';
-import { BookingService } from '../src/modules/bookings/service';
+import { createBooking, getAvailability } from '../src/modules/bookings/service';
 import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
 
@@ -49,14 +49,14 @@ async function run() {
   const startTime = DateTime.fromISO(`${today}T10:00:00Z`).toJSDate();
   const endTime = DateTime.fromISO(`${today}T11:00:00Z`).toJSDate();
 
-  await BookingService.createBooking(org._id.toString(), user._id.toString(), {
+  await createBooking(org._id.toString(), user._id.toString(), {
     resourceId: resource._id.toString(),
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString()
   });
 
   console.log('Fetching availability...');
-  const slots = await BookingService.getAvailability(org._id.toString(), resource._id.toString(), today as string);
+  const slots = await getAvailability(org._id.toString(), resource._id.toString(), today as string);
   
   console.log('Available slots:');
   console.log(JSON.stringify(slots, null, 2));

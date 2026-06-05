@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { BookingController } from './controller';
+import { create, getAvailability } from './controller';
 import { requireAuth } from '../../middlewares/auth';
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.post('/', BookingController.create);
+router.post('/', create);
 
-router.get('/availability/:resourceId', BookingController.getAvailability);
+router.get('/availability/:resourceId', getAvailability);
 
 export default router;
