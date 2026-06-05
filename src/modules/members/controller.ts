@@ -6,8 +6,14 @@ export const getMembers = async (req: Request, res: Response) => {
     const members = await User.find({ organizationId: req.user!.organizationId })
       .select('-passwordHash')
       .lean();
-    res.json({ success: true, data: members });
+    res.json({
+      success: true,
+      data: members
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 };

@@ -93,7 +93,9 @@ export const getAvailability = async (organizationId: string, resourceId: string
   if (!org) throw new Error('Organization not found');
 
   const tz = org.timezone;
-  const targetDate = DateTime.fromISO(dateStr, { zone: tz }).startOf('day');
+  const targetDate = DateTime.fromISO(dateStr, {
+    zone: tz
+  }).startOf('day');
 
   if (!targetDate.isValid) throw new Error('Invalid date format');
 
