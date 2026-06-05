@@ -19,9 +19,10 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-if (env.NODE_ENV !== 'production' && env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
-}
+// Uncomment before go to production
+// if (env.NODE_ENV !== 'production' && env.NODE_ENV !== 'test') {
+app.use(morgan('dev'));
+// }
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
