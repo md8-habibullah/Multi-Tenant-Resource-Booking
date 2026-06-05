@@ -132,7 +132,21 @@ const options = {
                 schema:
                 {
                   type: 'object',
-                  properties: { timezone: { type: 'string' } }
+                  properties: {
+                    name: { type: 'string' },
+                    timezone: { type: 'string' },
+                    workingHours: {
+                      type: 'object',
+                      properties: {
+                        start: { type: 'string' },
+                        end: { type: 'string' },
+                        daysOfWeek: {
+                          type: 'array',
+                          items: { type: 'number' }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

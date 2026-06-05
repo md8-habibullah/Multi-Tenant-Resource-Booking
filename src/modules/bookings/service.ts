@@ -3,10 +3,6 @@ import { Booking } from './model';
 import { Resource } from '../resources/model';
 import { Organization } from '../organizations/model';
 
-/**
- * Resolves the absolute UTC shift boundaries for a given target DateTime, 
- * factoring in timezone offsets and cross-day shift overlaps (e.g., a shift from 22:00 to 06:00).
- */
 function getShift(org: any, targetDt: DateTime, tz: string) {
   const [startHour, startMin] = org.workingHours.start.split(':').map(Number);
   const [endHour, endMin] = org.workingHours.end.split(':').map(Number);
@@ -14,12 +10,10 @@ function getShift(org: any, targetDt: DateTime, tz: string) {
   let shiftStart = targetDt.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
   let shiftEnd = targetDt.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
 
-  // Handle overnight shifts by explicitly extending the end boundary to the next day
   if (shiftEnd <= shiftStart) {
     shiftEnd = shiftEnd.plus({ days: 1 });
   }
 
-  // If the requested time is before today's shift starts, evaluate if it falls within yesterday's overnight shift
   if (targetDt < shiftStart) {
     const prevStart = shiftStart.minus({ days: 1 });
     const prevEnd = shiftEnd.minus({ days: 1 });
@@ -57,9 +51,6 @@ export class BookingService {
 
     const bufferMs = (resource.bufferTimeBefore + resource.bufferTimeAfter) * 60000;
 
-    // Algebraic overlap prevention:
-    // Two periods [A1, B1] and [A2, B2] overlap if A1 < B2 and A2 < B1.
-    // By extending the search bounds by `bufferMs`, we prevent meetings from clipping their padding constraints.
     const overlap = await Booking.findOne({
       resourceId,
       organizationId,
@@ -117,7 +108,6 @@ export class BookingService {
     const availableSlots = [];
     let currentStart: any = shiftStart;
 
-    // Iteratively slice the available shift by subtracting booked segments and expanding their boundaries using resource buffer times.
     for (const booking of existingBookings) {
       const bookingStart = DateTime.fromJSDate(booking.startTime).setZone(tz);
       const bookingEnd = DateTime.fromJSDate(booking.endTime).setZone(tz);
