@@ -1,9 +1,11 @@
 # Multi-Tenant Resource Booking & Availability System
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-calendeee.habibullah.dev-blue?style=for-the-badge&logo=vercel)](https://calendeee.habibullah.dev/)
+[![API Docs](https://img.shields.io/badge/API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger)](https://calendeee.habibullah.dev/api-docs)
 [![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)]()
 
 **Live Production URL:** [https://calendeee.habibullah.dev/](https://calendeee.habibullah.dev/)
+**Live API Documentation:** [https://calendeee.habibullah.dev/api-docs/](https://calendeee.habibullah.dev/api-docs/)
 
 ---
 
