@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import { Booking } from './model';
 import { Resource } from '../resources/model';
@@ -24,8 +25,6 @@ function getShift(org: any, targetDt: DateTime, tz: string) {
 
   return { shiftStart, shiftEnd, shiftDate: targetDt };
 }
-
-import mongoose from 'mongoose';
 
 export const createBooking = async (organizationId: string, userId: string, data: any) => {
   const session = await mongoose.startSession();
