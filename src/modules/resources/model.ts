@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface IResource extends Document {
+export interface IResource {
   name: string;
   organizationId: mongoose.Types.ObjectId;
   bufferTimeBefore: number;

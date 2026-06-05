@@ -109,14 +109,20 @@ export const getAvailability = async (organizationId: string, resourceId: string
   const shiftStart = targetDate.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
   let shiftEnd = targetDate.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
   if (shiftEnd <= shiftStart) {
-    shiftEnd = shiftEnd.plus({ days: 1 });
+    shiftEnd = shiftEnd.plus({
+      days: 1
+    });
   }
 
   const existingBookings = await Booking.find({
     resourceId,
     organizationId,
-    startTime: { $lt: shiftEnd.toJSDate() },
-    endTime: { $gt: shiftStart.toJSDate() }
+    startTime: {
+      $lt: shiftEnd.toJSDate()
+    },
+    endTime: {
+      $gt: shiftStart.toJSDate()
+    }
   }).sort({ startTime: 1 });
 
   const availableSlots = [];
@@ -126,13 +132,20 @@ export const getAvailability = async (organizationId: string, resourceId: string
     const bookingStart = DateTime.fromJSDate(booking.startTime).setZone(tz);
     const bookingEnd = DateTime.fromJSDate(booking.endTime).setZone(tz);
 
-    const blockedStart = bookingStart.minus({ minutes: resource.bufferTimeBefore });
-    const blockedEnd = bookingEnd.plus({ minutes: resource.bufferTimeAfter });
+    const blockedStart = bookingStart.minus({
+      minutes: resource.bufferTimeBefore
+    });
+    const blockedEnd = bookingEnd.plus({
+      minutes: resource.bufferTimeAfter
+    });
 
     if (currentStart < blockedStart) {
       const endOfSlot = blockedStart > shiftEnd ? shiftEnd : blockedStart;
       if (currentStart < endOfSlot) {
-        availableSlots.push({ start: currentStart.toISO(), end: endOfSlot.toISO() });
+        availableSlots.push({
+          start: currentStart.toISO(),
+          end: endOfSlot.toISO()
+        });
       }
     }
 
@@ -142,7 +155,10 @@ export const getAvailability = async (organizationId: string, resourceId: string
   }
 
   if (currentStart < shiftEnd) {
-    availableSlots.push({ start: currentStart.toISO(), end: shiftEnd.toISO() });
+    availableSlots.push({
+      start: currentStart.toISO(),
+      end: shiftEnd.toISO()
+    });
   }
 
   return availableSlots;

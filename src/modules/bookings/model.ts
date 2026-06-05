@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface IBooking extends Document {
+export interface IBooking {
   resourceId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   organizationId: mongoose.Types.ObjectId;
