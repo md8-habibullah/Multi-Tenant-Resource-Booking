@@ -6,20 +6,20 @@ const options = {
     info: {
       title: 'Multi-Tenant Resource Booking API',
       version: '1.0.0',
-      description: 'API documentation for the Multi-Tenant Resource Booking system',
+      description: 'API documentation for the Multi-Tenant Resource Booking system. Demo Credentials - Email: admin@admin.dev | Password: admin12345',
     },
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'token',
         },
       },
     },
     security: [
       {
-        bearerAuth: [],
+        cookieAuth: [],
       },
     ],
     paths: {

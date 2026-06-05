@@ -6,6 +6,9 @@ echo "Starting RBAC Tests..."
 # Random emails
 ADMIN_EMAIL="admin_$RANDOM@test.com"
 EMP_EMAIL="emp_$RANDOM@test.com"
+ADMIN_COOKIE="admin_cookies.txt"
+EMP_COOKIE="emp_cookies.txt"
+rm -f $ADMIN_COOKIE $EMP_COOKIE
 
 # Start Server
 echo "Booting server in background..."
@@ -17,23 +20,22 @@ sleep 5
 echo "1. Registering ORG_ADMIN..."
 ADMIN_RES=$(curl -s -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
+  -c "$ADMIN_COOKIE" \
   -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"password123\", \"organizationName\": \"RBAC Org\"}")
 
-ADMIN_JWT=$(echo $ADMIN_RES | grep -o '"token":"[^"]*' | cut -d'"' -f4)
-ORG_ID=$(echo $ADMIN_RES | grep -o '"_id":"[^"]*' | head -n 1 | cut -d'"' -f4)
+ORG_ID=$(echo $ADMIN_RES | grep -o '"organizationId":"[^"]*' | head -n 1 | cut -d'"' -f4)
 
 echo "ORG_ID: $ORG_ID"
 
 echo "2. Registering EMPLOYEE..."
 EMP_RES=$(curl -s -X POST http://localhost:5000/api/auth/employee \
   -H "Content-Type: application/json" \
+  -c "$EMP_COOKIE" \
   -d "{\"email\": \"$EMP_EMAIL\", \"password\": \"password123\", \"organizationId\": \"$ORG_ID\"}")
-
-EMP_JWT=$(echo $EMP_RES | grep -o '"token":"[^"]*' | cut -d'"' -f4)
 
 echo "3. Admin Test: Creating Resource..."
 RES_RES=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/api/resources \
-  -H "Authorization: Bearer $ADMIN_JWT" \
+  -b "$ADMIN_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{"name": "Admin Room", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
 
@@ -47,7 +49,7 @@ fi
 
 echo "4. Security Breach Test: Employee creating Resource..."
 SEC_RES=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/api/resources \
-  -H "Authorization: Bearer $EMP_JWT" \
+  -b "$EMP_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{"name": "Hacked Room", "bufferTimeBefore": 0, "bufferTimeAfter": 0}')
 
@@ -61,20 +63,20 @@ fi
 
 echo "5. Employee Test: Creating Booking..."
 ADMIN_RESOURCE_RES=$(curl -s -X POST http://localhost:5000/api/resources \
-  -H "Authorization: Bearer $ADMIN_JWT" \
+  -b "$ADMIN_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{"name": "Employee Room", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
 RESOURCE_ID=$(echo $ADMIN_RESOURCE_RES | grep -o '"_id":"[^"]*' | head -n 1 | cut -d'"' -f4)
 
 curl -s -X PUT http://localhost:5000/api/organizations \
-  -H "Authorization: Bearer $ADMIN_JWT" \
+  -b "$ADMIN_COOKIE" \
   -H "Content-Type: application/json" \
   -d '{"timezone": "UTC", "workingHours": {"start": "09:00", "end": "17:00", "daysOfWeek": [1,2,3,4,5,6,7]}}' > /dev/null
 
 FIXED_DATE="2026-06-05"
 
 BOOK_RES=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/api/bookings \
-  -H "Authorization: Bearer $EMP_JWT" \
+  -b "$EMP_COOKIE" \
   -H "Content-Type: application/json" \
   -d "{\"resourceId\": \"$RESOURCE_ID\", \"startTime\": \"${FIXED_DATE}T12:00:00Z\", \"endTime\": \"${FIXED_DATE}T13:00:00Z\"}")
 
@@ -83,7 +85,7 @@ if [ "$BOOK_RES" == "200" ] || [ "$BOOK_RES" == "201" ]; then
 else
   echo "FAIL: Employee could not create booking (HTTP $BOOK_RES)"
   curl -s -X POST http://localhost:5000/api/bookings \
-    -H "Authorization: Bearer $EMP_JWT" \
+    -b "$EMP_COOKIE" \
     -H "Content-Type: application/json" \
     -d "{\"resourceId\": \"$RESOURCE_ID\", \"startTime\": \"${FIXED_DATE}T12:00:00Z\", \"endTime\": \"${FIXED_DATE}T13:00:00Z\"}"
   kill $PID
@@ -92,3 +94,4 @@ fi
 
 echo "RBAC TESTS PASSED 100%!"
 kill $PID
+rm -f $ADMIN_COOKIE $EMP_COOKIE

@@ -108,3 +108,8 @@ dist
 
 # DS Store
 .DS_Store
+
+# Cookies
+cookies.txt
+admin_cookies.txt
+emp_cookies.txt
