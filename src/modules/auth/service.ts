@@ -28,7 +28,7 @@ export const register = async (data: any) => {
       role: user.role
     },
     process.env.JWT_SECRET as string,
-    { expiresIn: '1d' }
+    { expiresIn: '7d' }
   );
 
   return { token, user, organization: org };
@@ -62,7 +62,7 @@ export const registerEmployee = async (data: any) => {
       role: user.role
     },
     process.env.JWT_SECRET as string,
-    { expiresIn: '1d' }
+    { expiresIn: '7d' }
   );
 
   return { token, user };
@@ -88,7 +88,7 @@ export const login = async (data: any) => {
       role: user.role
     },
     process.env.JWT_SECRET as string,
-    { expiresIn: '1d' }
+    { expiresIn: '7d' }
   );
 
   return { token, user };

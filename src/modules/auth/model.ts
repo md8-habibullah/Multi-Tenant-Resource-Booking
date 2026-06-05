@@ -1,11 +1,11 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
 export enum Role {
   ORG_ADMIN = 'ORG_ADMIN',
   EMPLOYEE = 'EMPLOYEE'
 }
 
-export interface IUser extends Document {
+export interface IUser {
   email: string;
   passwordHash: string;
   organizationId: mongoose.Types.ObjectId;
@@ -35,6 +35,8 @@ const UserSchema: Schema = new Schema({
     enum: Object.values(Role),
     default: Role.EMPLOYEE
   }
-}, { timestamps: true });
+}, {
+  timestamps: true
+});
 
 export const User = mongoose.model<IUser>('User', UserSchema);
