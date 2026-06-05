@@ -11,7 +11,10 @@ export interface IResource {
 }
 
 const ResourceSchema: Schema = new Schema({
-  name: { type: String, required: true },
+  name: {
+    type: String,
+    required: true
+  },
   organizationId: {
     type: Schema.Types.ObjectId,
     ref: 'Organization',
