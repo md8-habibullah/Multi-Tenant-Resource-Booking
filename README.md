@@ -10,25 +10,21 @@ A highly scalable, multi-tenant resource booking and availability engine built s
 - **Validation**: Zod
 - **Time Engine**: Luxon
 
-## Project Structure
-```text
-src/
-├── app.ts                 # Express setup and central routing
-├── server.ts              # Entry point with DB connection
-├── config/
-│   └── database.ts        # Mongoose setup
-├── middlewares/
-│   ├── auth.ts            # JWT verification & RBAC
-│   └── errorHandler.ts    # Centralized Zod/Mongoose error handling
-└── modules/
-    ├── auth/              # Registration, Login, User models
-    ├── bookings/          # Luxon Availability Engine & Booking CRUD
-    ├── organizations/     # Tenant settings (working hours, timezones)
-    └── resources/         # Resource configuration with buffer times
+## Features
+- **Strict Tenant Isolation**: All endpoints natively filter via `req.user.organizationId` avoiding cross-tenant data leaks.
+- **Dynamic Availability Engine**: Built with Luxon to properly subtract existing bookings and calculate open slots within organization working hours.
+- **Buffer Padding Algebra**: Dynamically factors in resource-specific buffers (before/after bookings) during overlap math, ensuring meetings never clip each other.
+
+## Running the Project Locally
+
+### 1. Environment Setup
+Copy the example environment file and customize your variables:
+```bash
+cp .env.example .env
 ```
+Ensure your `.env` contains valid a `MONGO_URI`, `JWT_SECRET`, and `PORT`.
 
-## Running the Project
-
+### 2. Install & Run
 ```bash
 # Install dependencies
 npm install
@@ -37,15 +33,13 @@ npm install
 npm run dev
 ```
 
-> **Note**: Ensure your `.env` contains valid `MONGO_URI`, `JWT_SECRET`, and `PORT`.
-
 ## API Documentation
 
 All protected routes require a Bearer token in the `Authorization` header:
 `Authorization: Bearer <JWT>`
 
 ### Auth Module
-- `POST /api/auth/register` - Register a new organization admin.
+- `POST /api/auth/register` - Register a new organization admin (Returns a JWT token).
 - `POST /api/auth/login` - Login to receive a JWT.
 
 ### Organizations Module
@@ -63,8 +57,8 @@ All protected routes require a Bearer token in the `Authorization` header:
 - `POST /api/bookings` - Create a new booking for a resource. Ensures overlap protection using complex buffer algebra and strictly verifies organization shift hours.
 - `GET /api/bookings/availability/:resourceId?date=YYYY-MM-DD` - Calculates free time slots dynamically using Luxon, strictly subtracting existing bookings and precise buffer padded times.
 
-## Run Tests
-An end-to-end audit test script `qa-test.sh` is provided. Run the server, then execute:
+## Running Automated QA Tests
+An end-to-end audit test script `run-tests.sh` is provided. While the server is running (`npm run dev`), execute the bash script:
 ```bash
-bash qa-test.sh
+bash run-tests.sh
 ```
