@@ -10,28 +10,40 @@ const options = {
     },
     components: {
       securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey',
-          in: 'cookie',
-          name: 'token',
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
         },
       },
     },
     security: [
       {
-        cookieAuth: [],
+        bearerAuth: [],
       },
     ],
     paths: {
       '/api/auth/register': {
         post: {
           summary: 'Provision a new organization and administrator account',
-          description: 'Initializes a new tenant environment by creating an organization record alongside its master administrator (ORG_ADMIN). Sets an HTTP-only cookie containing the JWT on successful authentication.',
+          description: 'Initializes a new tenant environment by creating an organization record alongside its master administrator (ORG_ADMIN).',
           tags: ['Auth'],
           security: [],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { email: { type: 'string' }, password: { type: 'string' }, organizationName: { type: 'string' } } } } }
+            content: {
+              'application/json': {
+                schema:
+                {
+                  type: 'object', properties:
+                  {
+                    email: { type: 'string' },
+                    password: { type: 'string' },
+                    organizationName: { type: 'string' }
+                  }
+                }
+              }
+            }
           },
           responses: { 201: { description: 'Tenant successfully provisioned' } }
         }
@@ -39,12 +51,26 @@ const options = {
       '/api/auth/employee': {
         post: {
           summary: 'Onboard a new employee to an existing organization',
-          description: 'Creates a standard employee user account scoped to a specific organization. Employees can book resources but lack administrative privileges. Sets an HTTP-only cookie containing the JWT on successful authentication.',
+          description: 'Creates a standard employee user account scoped to a specific organization. Employees can book resources but lack administrative privileges.',
           tags: ['Auth'],
           security: [],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { email: { type: 'string' }, password: { type: 'string' }, organizationId: { type: 'string' } } } } }
+            content: {
+              'application/json':
+              {
+                schema:
+                {
+                  type: 'object',
+                  properties:
+                  {
+                    email: { type: 'string' },
+                    password: { type: 'string' },
+                    organizationId: { type: 'string' }
+                  }
+                }
+              }
+            }
           },
           responses: { 201: { description: 'Employee successfully onboarded' } }
         }
@@ -52,12 +78,24 @@ const options = {
       '/api/auth/login': {
         post: {
           summary: 'Authenticate and retrieve access token',
-          description: 'Validates user credentials and issues a JWT token. Sets an HTTP-only cookie containing the JWT on successful authentication.',
+          description: 'Validates user credentials and issues a JWT Bearer token used to authorize subsequent API requests.',
           tags: ['Auth'],
           security: [],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { email: { type: 'string' }, password: { type: 'string' } } } } }
+            content: {
+              'application/json':
+              {
+                schema:
+                {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string' },
+                    password: { type: 'string' }
+                  }
+                }
+              }
+            }
           },
           responses: { 200: { description: 'Authentication successful' } }
         }
@@ -68,7 +106,11 @@ const options = {
           description: 'Clears the HTTP-only JWT cookie to securely log the user out.',
           tags: ['Auth'],
           security: [],
-          responses: { 200: { description: 'Logged out successfully' } }
+          responses: {
+            200: {
+              description: 'Logged out successfully'
+            }
+          }
         }
       },
       '/api/organizations': {
@@ -84,7 +126,16 @@ const options = {
           tags: ['Organizations'],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { timezone: { type: 'string' } } } } }
+            content: {
+              'application/json':
+              {
+                schema:
+                {
+                  type: 'object',
+                  properties: { timezone: { type: 'string' } }
+                }
+              }
+            }
           },
           responses: { 200: { description: 'Configuration updated successfully' } }
         }
@@ -94,7 +145,11 @@ const options = {
           summary: 'List available resources',
           description: 'Retrieves all active, non-deleted resources associated with the current tenant.',
           tags: ['Resources'],
-          responses: { 200: { description: 'Resources retrieved successfully' } }
+          responses: {
+            200: {
+              description: 'Resources retrieved successfully'
+            }
+          }
         },
         post: {
           summary: 'Create a new bookable resource',
@@ -102,7 +157,18 @@ const options = {
           tags: ['Resources'],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { name: { type: 'string' }, bufferTimeBefore: { type: 'number' }, bufferTimeAfter: { type: 'number' } } } } }
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    bufferTimeBefore: { type: 'number' },
+                    bufferTimeAfter: { type: 'number' }
+                  }
+                }
+              }
+            }
           },
           responses: { 201: { description: 'Resource successfully provisioned' } }
         }
