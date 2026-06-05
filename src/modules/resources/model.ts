@@ -3,8 +3,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IResource extends Document {
   name: string;
   organizationId: mongoose.Types.ObjectId;
-  bufferTimeBefore: number; // in minutes
-  bufferTimeAfter: number; // in minutes
+  bufferTimeBefore: number;
+  bufferTimeAfter: number;
   deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

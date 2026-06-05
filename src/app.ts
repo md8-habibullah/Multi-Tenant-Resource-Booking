@@ -11,13 +11,11 @@ import { swaggerSpec } from './docs/swagger';
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Routes
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -30,7 +28,6 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/bookings', bookingRoutes);
 
-// Error Handler
 app.use(errorHandler);
 
 export default app;

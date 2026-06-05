@@ -1,64 +1,75 @@
 # Multi-Tenant Resource Booking API
 
-A highly scalable, multi-tenant resource booking and availability engine built strictly using Domain-Driven Design patterns in Node.js, Express, TypeScript, MongoDB, and Luxon.
+**Author:** MD. HABIBULLAH SHARIF
 
-## Technology Stack
-- **Runtime**: Node.js
-- **Language**: TypeScript
-- **Framework**: Express.js
-- **Database**: MongoDB (Mongoose)
-- **Validation**: Zod
-- **Time Engine**: Luxon
+A highly scalable, multi-tenant resource booking and availability engine engineered for complex scheduling scenarios. Built with Node.js, Express, TypeScript, and MongoDB, this platform securely isolates organizational data while handling advanced time algebra.
 
-## Features
-- **Strict Tenant Isolation**: All endpoints natively filter via `req.user.organizationId` avoiding cross-tenant data leaks.
-- **Dynamic Availability Engine**: Built with Luxon to properly subtract existing bookings and calculate open slots within organization working hours.
-- **Buffer Padding Algebra**: Dynamically factors in resource-specific buffers (before/after bookings) during overlap math, ensuring meetings never clip each other.
+## Architecture Overview
 
-## Running the Project Locally
+This project adheres to **Domain-Driven Design (DDD)** principles to ensure scalability and maintainability:
+- **Modular Domains:** The codebase is partitioned into distinct modules (`auth`, `organizations`, `resources`, `bookings`), each encapsulating its own models, services, controllers, and routing.
+- **Strict Tenant Isolation:** Multi-tenancy is enforced natively at the service level. Every database query implicitly filters by the authenticated user's `organizationId`, preventing cross-tenant data leaks by design.
+- **Service-Oriented Logic:** Business rules (such as buffer calculations and timezone math) are completely decoupled from HTTP transport layers (controllers), ensuring pure, testable operations.
 
-### 1. Environment Setup
-Copy the example environment file and customize your variables:
+## The Availability Engine
+
+The core of the system is the **Availability Engine**, which dynamically computes free scheduling blocks:
+1. **Shift Resolution:** Resolves the organization's absolute UTC working boundaries, natively supporting cross-day shifts (e.g., 22:00 to 06:00) using localized Luxon timezone configurations.
+2. **Buffer Algebra:** Automatically fetches all existing bookings for the requested date and injects the resource's mandatory `bufferTimeBefore` and `bufferTimeAfter` (in minutes).
+3. **Iterative Slicing:** Algebraically sweeps through the organization's working hours, strictly subtracting the padded booking segments to output an array of genuinely bookable time spans.
+
+## Assumptions & Handled Edge Cases
+
+- **Cross-Day Timezones:** Working hours spanning across midnight (e.g., a hospital shift) are seamlessly supported. If an employee books a slot at `02:00` during an overnight shift, the engine intelligently ties the booking to the logical "shift day" from the previous calendar date.
+- **Concurrency & Overlap Prevention:** The booking creation endpoint uses an advanced mathematical inequality constraint (`newStart - totalBuffer < existingEnd` AND `newEnd + totalBuffer > existingStart`) at the MongoDB query level to prevent race conditions and overlapping bookings.
+- **Role-Based Access Control (RBAC):** `EMPLOYEE` accounts can only calculate availability and book resources, while `ORG_ADMIN` accounts handle configuration and resource provisioning.
+
+## Docker Deployment
+
+This project is fully containerized for a zero-friction setup.
+
+### 1. Environment Variables
+Copy the example environment configuration:
 ```bash
 cp .env.example .env
 ```
-Ensure your `.env` contains valid a `MONGO_URI`, `JWT_SECRET`, and `PORT`.
-
-### 2. Install & Run
-```bash
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
+Ensure your `.env` contains:
+```env
+MONGO_URI=mongodb://mongodb:27017/multi-tenant-booking
+PORT=5000
+JWT_SECRET=your_super_secret_jwt_key
+NODE_ENV=production
 ```
 
-## API Documentation
-
-All protected routes require a Bearer token in the `Authorization` header:
-`Authorization: Bearer <JWT>`
-
-### Auth Module
-- `POST /api/auth/register` - Register a new organization admin (Returns a JWT token).
-- `POST /api/auth/login` - Login to receive a JWT.
-
-### Organizations Module
-- `GET /api/organizations` - Get the current organization's settings.
-- `PUT /api/organizations` - Update organization timezone and working hours. (Requires `ORG_ADMIN`)
-
-### Resources Module
-- `GET /api/resources` - List all active resources for the organization.
-- `GET /api/resources/:id` - Get a specific resource.
-- `POST /api/resources` - Create a new resource with buffer times. (Requires `ORG_ADMIN`)
-- `PUT /api/resources/:id` - Update an existing resource. (Requires `ORG_ADMIN`)
-- `DELETE /api/resources/:id` - Soft delete a resource. (Requires `ORG_ADMIN`)
-
-### Bookings Module
-- `POST /api/bookings` - Create a new booking for a resource. Ensures overlap protection using complex buffer algebra and strictly verifies organization shift hours.
-- `GET /api/bookings/availability/:resourceId?date=YYYY-MM-DD` - Calculates free time slots dynamically using Luxon, strictly subtracting existing bookings and precise buffer padded times.
-
-## Running Automated QA Tests
-An end-to-end audit test script `run-tests.sh` is provided. While the server is running (`npm run dev`), execute the bash script:
+### 2. Boot the Cluster
+Use Docker Compose to build and start both the API and the MongoDB instance in detached mode:
 ```bash
-bash run-tests.sh
+docker compose up -d --build
+```
+*The API will be accessible at `http://localhost:5000`.*
+
+### 3. API Documentation
+Once running, interactive Swagger documentation is exposed at:
+👉 **http://localhost:5000/api-docs**
+
+### 4. Tearing Down
+To stop and remove the containers, networks, and volumes:
+```bash
+docker compose down
+```
+
+## Running the Test Suite
+Four comprehensive test suites are provided in the `/tests` directory. While the environment is running, execute:
+```bash
+# Verify End-to-End API flows
+bash tests/run-tests.sh
+
+# Verify comprehensive QA scenarios
+bash tests/qa-test.sh
+
+# Verify Role-Based Security overrides
+bash tests/rbac-test.sh
+
+# Verify core Domain Logic (Availability Engine)
+npx ts-node tests/test-engine.ts
 ```

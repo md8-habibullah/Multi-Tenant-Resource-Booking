@@ -4,9 +4,9 @@ export interface IOrganization extends Document {
   name: string;
   timezone: string;
   workingHours: {
-    start: string; // '09:00'
-    end: string;   // '17:00'
-    daysOfWeek: number[]; // [1,2,3,4,5] for Mon-Fri
+    start: string;
+    end: string;
+    daysOfWeek: number[];
   };
   createdAt: Date;
   updatedAt: Date;

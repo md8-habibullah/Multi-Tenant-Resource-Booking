@@ -3,44 +3,32 @@ import { Booking } from './model';
 import { Resource } from '../resources/model';
 import { Organization } from '../organizations/model';
 
-function getWorkingHoursForDateTime(org: any, targetDt: DateTime, tz: string) {
+/**
+ * Resolves the absolute UTC shift boundaries for a given target DateTime, 
+ * factoring in timezone offsets and cross-day shift overlaps (e.g., a shift from 22:00 to 06:00).
+ */
+function getShift(org: any, targetDt: DateTime, tz: string) {
   const [startHour, startMin] = org.workingHours.start.split(':').map(Number);
   const [endHour, endMin] = org.workingHours.end.split(':').map(Number);
 
-  let workingStart = targetDt.set({
-    hour: startHour,
-    minute: startMin,
-    second: 0,
-    millisecond: 0
-  });
-  let workingEnd = targetDt.set({
-    hour: endHour,
-    minute: endMin,
-    second: 0,
-    millisecond: 0
-  });
+  let shiftStart = targetDt.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
+  let shiftEnd = targetDt.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
 
-  if (workingEnd <= workingStart) {
-    workingEnd = workingEnd.plus({ days: 1 });
+  // Handle overnight shifts by explicitly extending the end boundary to the next day
+  if (shiftEnd <= shiftStart) {
+    shiftEnd = shiftEnd.plus({ days: 1 });
   }
 
-  if (targetDt < workingStart) {
-    const prevStart = workingStart.minus({ days: 1 });
-    const prevEnd = workingEnd.minus({ days: 1 });
+  // If the requested time is before today's shift starts, evaluate if it falls within yesterday's overnight shift
+  if (targetDt < shiftStart) {
+    const prevStart = shiftStart.minus({ days: 1 });
+    const prevEnd = shiftEnd.minus({ days: 1 });
     if (targetDt >= prevStart && targetDt <= prevEnd) {
-      return {
-        workingStart: prevStart,
-        workingEnd: prevEnd,
-        shiftDate: targetDt.minus({ days: 1 })
-      };
+      return { shiftStart: prevStart, shiftEnd: prevEnd, shiftDate: targetDt.minus({ days: 1 }) };
     }
   }
 
-  return {
-    workingStart,
-    workingEnd,
-    shiftDate: targetDt
-  };
+  return { shiftStart, shiftEnd, shiftDate: targetDt };
 }
 
 export class BookingService {
@@ -57,23 +45,26 @@ export class BookingService {
     const startDt = DateTime.fromJSDate(new Date(startTime)).setZone(tz);
     const endDt = DateTime.fromJSDate(new Date(endTime)).setZone(tz);
 
-    const { workingStart, workingEnd, shiftDate } = getWorkingHoursForDateTime(org, startDt, tz);
+    const { shiftStart, shiftEnd, shiftDate } = getShift(org, startDt, tz);
 
     if (!org.workingHours.daysOfWeek.includes(shiftDate.weekday)) {
       throw new Error('Booking is outside of working days');
     }
 
-    if (startDt < workingStart || endDt > workingEnd) {
+    if (startDt < shiftStart || endDt > shiftEnd) {
       throw new Error('Booking is outside of working hours');
     }
 
-    const bufferTotalMs = (resource.bufferTimeBefore + resource.bufferTimeAfter) * 60000;
+    const bufferMs = (resource.bufferTimeBefore + resource.bufferTimeAfter) * 60000;
 
+    // Algebraic overlap prevention:
+    // Two periods [A1, B1] and [A2, B2] overlap if A1 < B2 and A2 < B1.
+    // By extending the search bounds by `bufferMs`, we prevent meetings from clipping their padding constraints.
     const overlap = await Booking.findOne({
       resourceId,
       organizationId,
-      startTime: { $lt: new Date(new Date(endTime).getTime() + bufferTotalMs) },
-      endTime: { $gt: new Date(new Date(startTime).getTime() - bufferTotalMs) }
+      startTime: { $lt: new Date(new Date(endTime).getTime() + bufferMs) },
+      endTime: { $gt: new Date(new Date(startTime).getTime() - bufferMs) }
     });
 
     if (overlap) {
@@ -110,22 +101,23 @@ export class BookingService {
     const [startHour, startMin] = org.workingHours.start.split(':').map(Number);
     const [endHour, endMin] = org.workingHours.end.split(':').map(Number);
 
-    const workingStart = targetDate.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
-    let workingEnd = targetDate.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
-    if (workingEnd <= workingStart) {
-      workingEnd = workingEnd.plus({ days: 1 });
+    const shiftStart = targetDate.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
+    let shiftEnd = targetDate.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
+    if (shiftEnd <= shiftStart) {
+      shiftEnd = shiftEnd.plus({ days: 1 });
     }
 
     const existingBookings = await Booking.find({
       resourceId,
       organizationId,
-      startTime: { $lt: workingEnd.toJSDate() },
-      endTime: { $gt: workingStart.toJSDate() }
+      startTime: { $lt: shiftEnd.toJSDate() },
+      endTime: { $gt: shiftStart.toJSDate() }
     }).sort({ startTime: 1 });
 
     const availableSlots = [];
-    let currentStart: any = workingStart;
+    let currentStart: any = shiftStart;
 
+    // Iteratively slice the available shift by subtracting booked segments and expanding their boundaries using resource buffer times.
     for (const booking of existingBookings) {
       const bookingStart = DateTime.fromJSDate(booking.startTime).setZone(tz);
       const bookingEnd = DateTime.fromJSDate(booking.endTime).setZone(tz);
@@ -134,12 +126,9 @@ export class BookingService {
       const blockedEnd = bookingEnd.plus({ minutes: resource.bufferTimeAfter });
 
       if (currentStart < blockedStart) {
-        const endOfSlot = blockedStart > workingEnd ? workingEnd : blockedStart;
+        const endOfSlot = blockedStart > shiftEnd ? shiftEnd : blockedStart;
         if (currentStart < endOfSlot) {
-          availableSlots.push({
-            start: currentStart.toISO(),
-            end: endOfSlot.toISO()
-          });
+          availableSlots.push({ start: currentStart.toISO(), end: endOfSlot.toISO() });
         }
       }
 
@@ -148,11 +137,8 @@ export class BookingService {
       }
     }
 
-    if (currentStart < workingEnd) {
-      availableSlots.push({
-        start: currentStart.toISO(),
-        end: workingEnd.toISO()
-      });
+    if (currentStart < shiftEnd) {
+      availableSlots.push({ start: currentStart.toISO(), end: shiftEnd.toISO() });
     }
 
     return availableSlots;

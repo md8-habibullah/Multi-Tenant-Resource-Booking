@@ -38,7 +38,6 @@ const BookingSchema: Schema = new Schema({
   }
 }, { timestamps: true });
 
-// Compound index for finding overlapping bookings for a resource
 BookingSchema.index({ resourceId: 1, startTime: 1, endTime: 1 });
 BookingSchema.index({ organizationId: 1, startTime: 1, endTime: 1 });
 

@@ -10,7 +10,6 @@ router.use(requireAuth);
 router.get('/', ResourceController.getAll);
 router.get('/:id', ResourceController.getById);
 
-// Only ORG_ADMIN can modify resources
 router.post('/', requireRole(Role.ORG_ADMIN), ResourceController.create);
 router.put('/:id', requireRole(Role.ORG_ADMIN), ResourceController.update);
 router.delete('/:id', requireRole(Role.ORG_ADMIN), ResourceController.softDelete);
