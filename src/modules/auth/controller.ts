@@ -9,11 +9,17 @@ export class AuthController {
       const result = await AuthService.register(data);
       res.status(201).json({
         token: result.token,
-        user: { id: result.user._id, email: result.user.email, role: result.user.role },
+        user: {
+          id: result.user._id,
+          email: result.user.email,
+          role: result.user.role
+        },
         organization: result.organization
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(400).json({
+        error: error.message
+      });
     }
   }
 
@@ -23,10 +29,16 @@ export class AuthController {
       const result = await AuthService.login(data);
       res.json({
         token: result.token,
-        user: { id: result.user._id, email: result.user.email, role: result.user.role }
+        user: {
+          id: result.user._id,
+          email: result.user.email,
+          role: result.user.role
+        }
       });
     } catch (error: any) {
-      res.status(401).json({ error: error.message });
+      res.status(401).json({
+        error: error.message
+      });
     }
   }
 }

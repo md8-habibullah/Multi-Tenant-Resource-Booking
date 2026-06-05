@@ -23,7 +23,11 @@ export class AuthService {
     });
 
     const token = jwt.sign(
-      { id: user._id.toString(), organizationId: user.organizationId.toString(), role: user.role },
+      {
+        id: user._id.toString(),
+        organizationId: user.organizationId.toString(),
+        role: user.role
+      },
       process.env.JWT_SECRET as string,
       { expiresIn: '1d' }
     );
@@ -45,7 +49,11 @@ export class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user._id.toString(), organizationId: user.organizationId.toString(), role: user.role },
+      {
+        id: user._id.toString(),
+        organizationId: user.organizationId.toString(),
+        role: user.role
+      },
       process.env.JWT_SECRET as string,
       { expiresIn: '1d' }
     );
