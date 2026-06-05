@@ -10,23 +10,23 @@ const options = {
     },
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
+        cookieAuth: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'token',
         },
       },
     },
     security: [
       {
-        bearerAuth: [],
+        cookieAuth: [],
       },
     ],
     paths: {
       '/api/auth/register': {
         post: {
           summary: 'Provision a new organization and administrator account',
-          description: 'Initializes a new tenant environment by creating an organization record alongside its master administrator (ORG_ADMIN).',
+          description: 'Initializes a new tenant environment by creating an organization record alongside its master administrator (ORG_ADMIN). Sets an HTTP-only cookie containing the JWT on successful authentication.',
           tags: ['Auth'],
           security: [],
           requestBody: {
@@ -39,7 +39,7 @@ const options = {
       '/api/auth/employee': {
         post: {
           summary: 'Onboard a new employee to an existing organization',
-          description: 'Creates a standard employee user account scoped to a specific organization. Employees can book resources but lack administrative privileges.',
+          description: 'Creates a standard employee user account scoped to a specific organization. Employees can book resources but lack administrative privileges. Sets an HTTP-only cookie containing the JWT on successful authentication.',
           tags: ['Auth'],
           security: [],
           requestBody: {
@@ -52,7 +52,7 @@ const options = {
       '/api/auth/login': {
         post: {
           summary: 'Authenticate and retrieve access token',
-          description: 'Validates user credentials and issues a JWT Bearer token used to authorize subsequent API requests.',
+          description: 'Validates user credentials and issues a JWT token. Sets an HTTP-only cookie containing the JWT on successful authentication.',
           tags: ['Auth'],
           security: [],
           requestBody: {

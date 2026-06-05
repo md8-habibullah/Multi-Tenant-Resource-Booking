@@ -10,6 +10,7 @@ This project adheres to **Domain-Driven Design (DDD)** principles to ensure scal
 - **Modular Domains:** The codebase is partitioned into distinct modules (`auth`, `organizations`, `resources`, `bookings`), each encapsulating its own models, services, controllers, and routing.
 - **Strict Tenant Isolation:** Multi-tenancy is enforced natively at the service level. Every database query implicitly filters by the authenticated user's `organizationId`, preventing cross-tenant data leaks by design.
 - **Service-Oriented Logic:** Business rules (such as buffer calculations and timezone math) are completely decoupled from HTTP transport layers (controllers), ensuring pure, testable operations.
+- **Secure Session Management:** The API utilizes robust, Secure, HTTP-Only cookies to manage JSON Web Tokens (JWT). This architecture explicitly neutralizes Cross-Site Scripting (XSS) vulnerabilities by preventing client-side JavaScript access to the tokens, while strict `sameSite` policies mitigate CSRF vectors.
 
 ## The Availability Engine
 

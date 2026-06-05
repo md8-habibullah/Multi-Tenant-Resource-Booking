@@ -6,7 +6,7 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
-  maxAge: 24 * 60 * 60 * 1000
+  maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
 export class AuthController {
@@ -18,7 +18,7 @@ export class AuthController {
       res.status(201).json({
         success: true,
         message: 'Registration successful',
-        user: {
+        data: {
           id: result.user._id,
           email: result.user.email,
           role: result.user.role,
@@ -38,7 +38,7 @@ export class AuthController {
       res.status(201).json({
         success: true,
         message: 'Employee registered successfully',
-        user: {
+        data: {
           id: result.user._id,
           email: result.user.email,
           role: result.user.role,
@@ -58,7 +58,7 @@ export class AuthController {
       res.json({
         success: true,
         message: 'Authentication successful',
-        user: {
+        data: {
           id: result.user._id,
           email: result.user.email,
           role: result.user.role,
