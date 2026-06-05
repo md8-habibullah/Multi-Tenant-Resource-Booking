@@ -62,6 +62,15 @@ const options = {
           responses: { 200: { description: 'Authentication successful' } }
         }
       },
+      '/api/auth/logout': {
+        post: {
+          summary: 'Terminate the current session',
+          description: 'Clears the HTTP-only JWT cookie to securely log the user out.',
+          tags: ['Auth'],
+          security: [],
+          responses: { 200: { description: 'Logged out successfully' } }
+        }
+      },
       '/api/organizations': {
         get: {
           summary: 'Retrieve organization configuration',
