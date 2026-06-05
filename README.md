@@ -8,6 +8,8 @@
 
 **Live API Documentation:** [https://calendeee.habibullah.dev/api-docs/](https://calendeee.habibullah.dev/api-docs/)
 
+**Demo access:** Email: admin@admin.dev && Password: admin12345
+
 ---
 
 ## Core Architectural Highlights
