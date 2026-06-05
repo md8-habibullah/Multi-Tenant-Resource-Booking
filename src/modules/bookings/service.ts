@@ -25,51 +25,64 @@ function getShift(org: any, targetDt: DateTime, tz: string) {
   return { shiftStart, shiftEnd, shiftDate: targetDt };
 }
 
+import mongoose from 'mongoose';
+
 export const createBooking = async (organizationId: string, userId: string, data: any) => {
-  const { resourceId, startTime, endTime } = data;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const org = await Organization.findById(organizationId);
-  if (!org) throw new Error('Organization not found');
+  try {
+    const { resourceId, startTime, endTime } = data;
 
-  const resource = await Resource.findOne({ _id: resourceId, organizationId, deletedAt: null });
-  if (!resource) throw new Error('Resource not found');
+    const org = await Organization.findById(organizationId).session(session);
+    if (!org) throw new Error('Organization not found');
 
-  const tz = org.timezone;
-  const startDt = DateTime.fromJSDate(new Date(startTime)).setZone(tz);
-  const endDt = DateTime.fromJSDate(new Date(endTime)).setZone(tz);
+    const resource = await Resource.findOne({ _id: resourceId, organizationId, deletedAt: null }).session(session);
+    if (!resource) throw new Error('Resource not found');
 
-  const { shiftStart, shiftEnd, shiftDate } = getShift(org, startDt, tz);
+    const tz = org.timezone;
+    const startDt = DateTime.fromJSDate(new Date(startTime)).setZone(tz);
+    const endDt = DateTime.fromJSDate(new Date(endTime)).setZone(tz);
 
-  if (!org.workingHours.daysOfWeek.includes(shiftDate.weekday)) {
-    throw new Error('Booking is outside of working days');
+    const { shiftStart, shiftEnd, shiftDate } = getShift(org, startDt, tz);
+
+    if (!org.workingHours.daysOfWeek.includes(shiftDate.weekday)) {
+      throw new Error('Booking is outside of working days');
+    }
+
+    if (startDt < shiftStart || endDt > shiftEnd) {
+      throw new Error('Booking is outside of working hours');
+    }
+
+    const bufferMs = (resource.bufferTimeBefore + resource.bufferTimeAfter) * 60000;
+
+    const overlap = await Booking.findOne({
+      resourceId,
+      organizationId,
+      startTime: { $lt: new Date(new Date(endTime).getTime() + bufferMs) },
+      endTime: { $gt: new Date(new Date(startTime).getTime() - bufferMs) }
+    }).session(session);
+
+    if (overlap) {
+      throw new Error('Time slot is already booked or conflicts with buffer times');
+    }
+
+    const [booking] = await Booking.create([{
+      organizationId,
+      userId,
+      resourceId,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime)
+    }], { session });
+
+    await session.commitTransaction();
+    return booking;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-
-  if (startDt < shiftStart || endDt > shiftEnd) {
-    throw new Error('Booking is outside of working hours');
-  }
-
-  const bufferMs = (resource.bufferTimeBefore + resource.bufferTimeAfter) * 60000;
-
-  const overlap = await Booking.findOne({
-    resourceId,
-    organizationId,
-    startTime: { $lt: new Date(new Date(endTime).getTime() + bufferMs) },
-    endTime: { $gt: new Date(new Date(startTime).getTime() - bufferMs) }
-  });
-
-  if (overlap) {
-    throw new Error('Time slot is already booked or conflicts with buffer times');
-  }
-
-  const booking = await Booking.create({
-    organizationId,
-    userId,
-    resourceId,
-    startTime: new Date(startTime),
-    endTime: new Date(endTime)
-  });
-
-  return booking;
 };
 
 export const getAvailability = async (organizationId: string, resourceId: string, dateStr: string) => {

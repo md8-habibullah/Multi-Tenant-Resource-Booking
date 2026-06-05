@@ -113,6 +113,26 @@ const options = {
           }
         }
       },
+      '/api/members': {
+        get: {
+          summary: 'List organization members',
+          description: 'Returns a list of all users belonging to the currently authenticated user’s organization.',
+          tags: ['Organizations'],
+          responses: {
+            200: { description: 'Members retrieved successfully' }
+          }
+        }
+      },
+      '/api/organizations/me': {
+        get: {
+          summary: 'Retrieve my organization details',
+          description: 'Fetches the operational configuration of the authenticated user’s organization.',
+          tags: ['Organizations'],
+          responses: {
+            200: { description: 'Organization retrieved successfully' }
+          }
+        }
+      },
       '/api/organizations': {
         get: {
           summary: 'Retrieve organization configuration',
@@ -197,6 +217,30 @@ const options = {
             content: { 'application/json': { schema: { type: 'object', properties: { resourceId: { type: 'string' }, startTime: { type: 'string', format: 'date-time' }, endTime: { type: 'string', format: 'date-time' } } } } }
           },
           responses: { 201: { description: 'Booking successfully scheduled' } }
+        }
+      },
+      '/api/bookings/my': {
+        get: {
+          summary: 'List my bookings',
+          description: 'Retrieves all bookings made by the currently authenticated user within their organization.',
+          tags: ['Bookings'],
+          responses: {
+            200: { description: 'Bookings retrieved successfully' }
+          }
+        }
+      },
+      '/api/bookings/{id}': {
+        delete: {
+          summary: 'Cancel a booking',
+          description: 'Cancels a specific booking. Users can only cancel their own bookings, while ORG_ADMINs can cancel any booking within their organization.',
+          tags: ['Bookings'],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            200: { description: 'Booking cancelled successfully' },
+            404: { description: 'Booking not found or access denied' }
+          }
         }
       },
       '/api/bookings/availability/{resourceId}': {

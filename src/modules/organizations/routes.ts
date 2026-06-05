@@ -8,6 +8,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', get);
+router.get('/me', get);
 router.put('/', requireRole(Role.ORG_ADMIN), update);
 
 export default router;

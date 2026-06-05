@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createBooking, getAvailability as getAvailabilityService } from './service';
+import { Booking } from './model';
 import { createBookingSchema } from './validation';
 
 export const create = async (req: Request, res: Response) => {
@@ -37,5 +38,36 @@ export const getAvailability = async (req: Request, res: Response) => {
         error: error.message
       }
     );
+  }
+};
+
+export const getMyBookings = async (req: Request, res: Response) => {
+  try {
+    const bookings = await Booking.find({ 
+      userId: req.user!.id, 
+      organizationId: req.user!.organizationId 
+    }).sort({ startTime: 1 });
+    res.json({ success: true, data: bookings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const deleteBooking = async (req: Request, res: Response) => {
+  try {
+    const filter: any = { 
+      _id: req.params.id, 
+      organizationId: req.user!.organizationId 
+    };
+    if (req.user!.role !== 'ORG_ADMIN') {
+      filter.userId = req.user!.id;
+    }
+    const booking = await Booking.findOneAndDelete(filter);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Booking not found or access denied' });
+    }
+    res.json({ success: true, message: 'Booking cancelled successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };

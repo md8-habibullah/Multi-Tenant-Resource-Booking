@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { register as registerService, registerEmployee as registerEmployeeService, login as loginService } from './service';
+import { env } from '../../config/env';
 import { registerSchema, loginSchema, registerEmployeeSchema } from './validation';
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: env.NODE_ENV === 'production',
   sameSite: 'strict' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week 
 };

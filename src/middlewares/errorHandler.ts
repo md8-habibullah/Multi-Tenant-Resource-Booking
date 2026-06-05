@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { env } from '../config/env';
 import { ZodError } from 'zod';
 
 export const errorHandler = (
@@ -25,6 +26,6 @@ export const errorHandler = (
 
   res.status(500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    message: env.NODE_ENV === 'development' ? err.message : undefined,
   });
 };

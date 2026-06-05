@@ -2,6 +2,7 @@ import { User, Role } from './model';
 import { Organization } from '../organizations/model';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { env } from '../../config/env';
 
 export const register = async (data: any) => {
   const { email, password, organizationName } = data;
@@ -27,7 +28,7 @@ export const register = async (data: any) => {
       organizationId: user.organizationId.toString(),
       role: user.role
     },
-    process.env.JWT_SECRET as string,
+    env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 
@@ -61,7 +62,7 @@ export const registerEmployee = async (data: any) => {
       organizationId: user.organizationId.toString(),
       role: user.role
     },
-    process.env.JWT_SECRET as string,
+    env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 
@@ -87,7 +88,7 @@ export const login = async (data: any) => {
       organizationId: user.organizationId.toString(),
       role: user.role
     },
-    process.env.JWT_SECRET as string,
+    env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 
