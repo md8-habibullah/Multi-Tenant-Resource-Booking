@@ -3,6 +3,10 @@ import { env } from './env';
 
 export const connectDB = async () => {
   try {
+    if (mongoose.connection.readyState >= 1) {
+      return;
+    }
+
     const dbUri = env.NODE_ENV === 'test'
       ? env.MONGO_TEST_URI || `${env.MONGO_URI}-test`
       : env.MONGO_URI;

@@ -54,6 +54,10 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/members', memberRoutes);
 
+import { connectDB } from './config/database';
+
 app.use(errorHandler);
+
+connectDB();
 
 export default app;
