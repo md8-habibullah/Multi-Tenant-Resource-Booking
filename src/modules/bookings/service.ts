@@ -7,8 +7,18 @@ function getWorkingHoursForDateTime(org: any, targetDt: DateTime, tz: string) {
   const [startHour, startMin] = org.workingHours.start.split(':').map(Number);
   const [endHour, endMin] = org.workingHours.end.split(':').map(Number);
 
-  let workingStart = targetDt.set({ hour: startHour, minute: startMin, second: 0, millisecond: 0 });
-  let workingEnd = targetDt.set({ hour: endHour, minute: endMin, second: 0, millisecond: 0 });
+  let workingStart = targetDt.set({
+    hour: startHour,
+    minute: startMin,
+    second: 0,
+    millisecond: 0
+  });
+  let workingEnd = targetDt.set({
+    hour: endHour,
+    minute: endMin,
+    second: 0,
+    millisecond: 0
+  });
 
   if (workingEnd <= workingStart) {
     workingEnd = workingEnd.plus({ days: 1 });
@@ -18,17 +28,25 @@ function getWorkingHoursForDateTime(org: any, targetDt: DateTime, tz: string) {
     const prevStart = workingStart.minus({ days: 1 });
     const prevEnd = workingEnd.minus({ days: 1 });
     if (targetDt >= prevStart && targetDt <= prevEnd) {
-      return { workingStart: prevStart, workingEnd: prevEnd, shiftDate: targetDt.minus({ days: 1 }) };
+      return {
+        workingStart: prevStart,
+        workingEnd: prevEnd,
+        shiftDate: targetDt.minus({ days: 1 })
+      };
     }
   }
 
-  return { workingStart, workingEnd, shiftDate: targetDt };
+  return {
+    workingStart,
+    workingEnd,
+    shiftDate: targetDt
+  };
 }
 
 export class BookingService {
   static async createBooking(organizationId: string, userId: string, data: any) {
     const { resourceId, startTime, endTime } = data;
-    
+
     const org = await Organization.findById(organizationId);
     if (!org) throw new Error('Organization not found');
 
@@ -82,11 +100,11 @@ export class BookingService {
 
     const tz = org.timezone;
     const targetDate = DateTime.fromISO(dateStr, { zone: tz }).startOf('day');
-    
+
     if (!targetDate.isValid) throw new Error('Invalid date format');
 
     if (!org.workingHours.daysOfWeek.includes(targetDate.weekday)) {
-      return []; 
+      return [];
     }
 
     const [startHour, startMin] = org.workingHours.start.split(':').map(Number);
