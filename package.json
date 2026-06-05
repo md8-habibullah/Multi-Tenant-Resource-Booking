@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "MONGO_URI=mongodb://localhost:27017/test JWT_SECRET=super_secret_test_key NODE_ENV=test jest",
+    "test": "NODE_ENV=test jest --runInBand",
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"

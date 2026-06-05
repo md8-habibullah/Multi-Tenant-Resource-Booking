@@ -7,6 +7,7 @@ services:
       - "5000:5000"
     environment:
       - MONGO_URI=mongodb://mongodb:27017/multi-tenant-booking
+      - MONGO_TEST_URI=mongodb://mongodb:27017/multi-tenant-booking-test
       - PORT=5000
       - JWT_SECRET=supersecret123
       - NODE_ENV=production

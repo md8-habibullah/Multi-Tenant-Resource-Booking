@@ -6,32 +6,31 @@ echo "Starting QA Test..."
 # Wait for server to start if run in background
 sleep 3
 
-# Use random email to avoid collision
-RANDOM_EMAIL="admin_$RANDOM@test.com"
+ADMIN_EMAIL="admin@admin.dev"
+PASSWORD="admin12345"
+ORG_NAME="Ultra Admin"
 COOKIE_JAR="cookies.txt"
 rm -f $COOKIE_JAR
 
-# 1. Register Auth
-echo "Testing POST /api/auth/register"
-AUTH_RESPONSE=$(curl -s -X POST http://localhost:5000/api/auth/register \
+echo "1 & 2. Auth: Login or Register (Idempotent)"
+LOGIN_RES=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -c "$COOKIE_JAR" \
-  -d "{\"email\": \"$RANDOM_EMAIL\", \"password\": \"password123\", \"organizationName\": \"Test Org\"}")
+  -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"$PASSWORD\"}")
 
-echo $AUTH_RESPONSE
-ORG_ID=$(echo $AUTH_RESPONSE | grep -o '"organizationId":"[^"]*' | head -n 1 | cut -d'"' -f4)
-
-# 2. Login Auth
-echo "Testing POST /api/auth/login"
-LOGIN_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -c "$COOKIE_JAR" \
-  -d "{\"email\": \"$RANDOM_EMAIL\", \"password\": \"password123\"}")
-
-echo "Login HTTP Status: $LOGIN_RESPONSE"
-if [ "$LOGIN_RESPONSE" != "200" ]; then
-  echo "Failed to login"
-  exit 1
+if echo "$LOGIN_RES" | grep -q '"success":true'; then
+  echo "Login successful. Skipping registration."
+else
+  echo "Login failed. Registering new Admin..."
+  REG_RES=$(curl -s -X POST http://localhost:5000/api/auth/register \
+    -H "Content-Type: application/json" \
+    -c "$COOKIE_JAR" \
+    -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"$PASSWORD\", \"organizationName\": \"$ORG_NAME\"}")
+  
+  if ! echo "$REG_RES" | grep -q '"success":true'; then
+    echo "Registration failed: $REG_RES"
+    exit 1
+  fi
 fi
 
 # 3. Update Organization
@@ -47,7 +46,7 @@ echo "Testing POST /api/resources"
 RES_RESPONSE=$(curl -s -X POST http://localhost:5000/api/resources \
   -b "$COOKIE_JAR" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Conference Room", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
+  -d '{"name": "QA Conference Room", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
 
 echo $RES_RESPONSE
 RESOURCE_ID=$(echo $RES_RESPONSE | grep -o '"_id":"[^"]*' | head -n 1 | cut -d'"' -f4)
@@ -59,9 +58,7 @@ fi
 
 # 5. Create Booking
 echo "Testing POST /api/bookings"
-TODAY=$(date -u +"%Y-%m-%d")
-# If today is weekend, we might need a weekday for testing since org only allows 1,2,3,4,5. 
-# Better just use a fixed date that we know is a weekday. 2026-06-05 is Friday.
+# Use a fixed date that we know is a weekday. 2026-06-05 is Friday.
 FIXED_DATE="2026-06-05"
 
 BOOKING_RESPONSE=$(curl -s -X POST http://localhost:5000/api/bookings \

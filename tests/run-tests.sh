@@ -3,29 +3,39 @@ set -e
 
 echo "Starting Integration Tests..."
 
-# Random email for new user
-RANDOM_EMAIL="admin_$RANDOM@test.com"
+ADMIN_EMAIL="admin@admin.dev"
+PASSWORD="admin12345"
+ORG_NAME="Ultra Admin"
 COOKIE_JAR="cookies.txt"
 rm -f $COOKIE_JAR
 
-echo "1. POST to Auth/Register"
-AUTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/api/auth/register \
+echo "1. Authentication (Idempotent)"
+LOGIN_RES=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
   -c "$COOKIE_JAR" \
-  -d "{\"email\": \"$RANDOM_EMAIL\", \"password\": \"password123\", \"organizationName\": \"Integration Org\"}")
+  -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"$PASSWORD\"}")
 
-STATUS=$AUTH_RESPONSE
-if [ "$STATUS" != "201" ]; then
-  echo "Failed to register: HTTP $STATUS"
-  exit 1
+if echo "$LOGIN_RES" | grep -q '"success":true'; then
+  echo "Login successful! Skipping registration."
+else
+  echo "Login failed. Registering new Admin..."
+  REG_RES=$(curl -s -X POST http://localhost:5000/api/auth/register \
+    -H "Content-Type: application/json" \
+    -c "$COOKIE_JAR" \
+    -d "{\"email\": \"$ADMIN_EMAIL\", \"password\": \"$PASSWORD\", \"organizationName\": \"$ORG_NAME\"}")
+  
+  if ! echo "$REG_RES" | grep -q '"success":true'; then
+    echo "Registration failed: $REG_RES"
+    exit 1
+  fi
+  echo "Registration successful."
 fi
-echo "Registered and obtained cookie."
 
 echo "2. POST to Resources"
 RES_RESPONSE=$(curl -s -X POST http://localhost:5000/api/resources \
   -b "$COOKIE_JAR" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Conference Room A", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
+  -d '{"name": "Integration Room", "bufferTimeBefore": 15, "bufferTimeAfter": 15}')
 
 RESOURCE_ID=$(echo $RES_RESPONSE | grep -o '"_id":"[^"]*' | head -n 1 | cut -d'"' -f4)
 
