@@ -1,76 +1,134 @@
-# Multi-Tenant Resource Booking API
+# Multi-Tenant Resource Booking & Availability System
 
-**Author:** MD. HABIBULLAH SHARIF
+[![Live Demo](https://img.shields.io/badge/Live_Demo-calendeee.habibullah.dev-blue?style=for-the-badge&logo=vercel)](https://calendeee.habibullah.dev/)
+[![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)]()
 
-A highly scalable, multi-tenant resource booking and availability engine engineered for complex scheduling scenarios. Built with Node.js, Express, TypeScript, and MongoDB, this platform securely isolates organizational data while handling advanced time algebra.
+**Live Production URL:** [https://calendeee.habibullah.dev/](https://calendeee.habibullah.dev/)
 
-## Architecture Overview
+---
 
-This project adheres to **Domain-Driven Design (DDD)** principles to ensure scalability and maintainability:
-- **Modular Domains:** The codebase is partitioned into distinct modules (`auth`, `organizations`, `resources`, `bookings`), each encapsulating its own models, services, controllers, and routing.
-- **Strict Tenant Isolation:** Multi-tenancy is enforced natively at the service level. Every database query implicitly filters by the authenticated user's `organizationId`, preventing cross-tenant data leaks by design.
-- **Service-Oriented Logic:** Business rules (such as buffer calculations and timezone math) are completely decoupled from HTTP transport layers (controllers), ensuring pure, testable operations.
-- **Secure Session Management:** The API utilizes robust, Secure, HTTP-Only cookies to manage JSON Web Tokens (JWT). This architecture explicitly neutralizes Cross-Site Scripting (XSS) vulnerabilities by preventing client-side JavaScript access to the tokens, while strict `sameSite` policies mitigate CSRF vectors.
+## Core Architectural Highlights
 
-## The Availability Engine
+This backend is designed with a heavy emphasis on data integrity, scalable isolation, and production-grade reliability. The architecture is explicitly designed to handle the complex edge cases associated with multi-tenant scheduling across various time zones.
 
-The core of the system is the **Availability Engine**, which dynamically computes free scheduling blocks:
-1. **Shift Resolution:** Resolves the organization's absolute UTC working boundaries, natively supporting cross-day shifts (e.g., 22:00 to 06:00) using localized Luxon timezone configurations.
-2. **Buffer Algebra:** Automatically fetches all existing bookings for the requested date and injects the resource's mandatory `bufferTimeBefore` and `bufferTimeAfter` (in minutes).
-3. **Iterative Slicing:** Algebraically sweeps through the organization's working hours, strictly subtracting the padded booking segments to output an array of genuinely bookable time spans.
+- **Strict Tenant-Level Data Isolation:** Every API request is strictly scoped to the authenticated user's `organizationId`. A custom RBAC (Role-Based Access Control) middleware enforces a rigid boundary between `EMPLOYEE` and `ORG_ADMIN` operations. This ensures complete data siloing between tenants.
+- **Transactional Booking Safety (Atomic Operations):** The availability engine prevents race conditions and double-booking using true **MongoDB Transactions**. All time-slot checks, availability validations, and booking insertions are wrapped in an atomic Mongoose session—mathematically guaranteeing no overlapping bookings occur, even under extreme high-concurrency environments.
+- **Timezone-Aware Availability Engine:** Global scheduling is fundamentally complex. This engine utilizes **Luxon** to execute timezone-agnostic arithmetic. It dynamically slices working shifts (including complex overnight shifts), subtracts pre-existing bookings, and cleanly applies geometric buffer times to calculate open slots in real-time.
+- **Strict Environment Validation:** Boot-time validation powered by **Zod** instantly crashes the application if crucial environment variables (`MONGO_URI`, `JWT_SECRET`, etc.) are missing or malformed, preventing silent failures during deployment.
+- **Secure Cookie Sessions:** Authentication flows strictly utilize `HTTP-Only` cookies with `SameSite=strict` and `Secure` flags in production to protect JWTs from Cross-Site Scripting (XSS) attacks.
 
-## Assumptions & Handled Edge Cases
+---
 
-- **Cross-Day Timezones:** Working hours spanning across midnight (e.g., a hospital shift) are seamlessly supported. If an employee books a slot at `02:00` during an overnight shift, the engine intelligently ties the booking to the logical "shift day" from the previous calendar date.
-- **Concurrency & Overlap Prevention:** The booking creation endpoint uses an advanced mathematical inequality constraint (`newStart - totalBuffer < existingEnd` AND `newEnd + totalBuffer > existingStart`) at the MongoDB query level to prevent race conditions and overlapping bookings.
-- **Role-Based Access Control (RBAC):** `EMPLOYEE` accounts can only calculate availability and book resources, while `ORG_ADMIN` accounts handle configuration and resource provisioning.
+## Project Folder Structure Map
 
-## Docker Deployment
+The codebase leverages a modular, Domain-Driven Design (DDD) to keep concerns cleanly separated and highly maintainable as the system scales.
 
-This project is fully containerized for a zero-friction setup.
+```text
+src
+├── app.ts                  # Express application setup & global middlewares
+├── config
+│   ├── database.ts         # MongoDB connection logic
+│   └── env.ts              # Zod environment variable validation
+├── docs
+│   └── swagger.ts          # OpenAPI specification config & endpoints
+├── middlewares
+│   ├── auth.ts             # Secure cookie validation and RBAC enforcement
+│   └── errorHandler.ts     # Global centralized error handling mechanism
+├── modules                 # Domain modules (Clean functional exports)
+│   ├── auth                # Registration, Login, and Session management
+│   ├── bookings            # Availability Engine and Booking reservations
+│   ├── members             # Organization user listing
+│   ├── organizations       # Tenant configuration (Timezones, Working Hours)
+│   └── resources           # Bookable assets (Rooms, Desks) with buffers
+├── server.ts               # HTTP server boot script
+└── types                   # Custom TypeScript definitions
+```
 
-### 1. Environment Variables
-Copy the example environment configuration:
+---
+
+## Prerequisites & Tech Stack
+
+This project was architected, built, and tested entirely on a Linux-based operating system. Ensure you have the following installed before proceeding with local development:
+
+- **Node.js** (v18+)
+- **TypeScript** (v5+)
+- **MongoDB** (Local instance or Atlas URI)
+
+**Core Engineering Stack:**
+- **Express.js** - Robust, lightweight HTTP routing.
+- **Mongoose** - Elegant MongoDB object modeling.
+- **Zod** - TypeScript-first schema validation.
+- **Luxon** - Powerful, timezone-aware date math.
+- **Jest & Supertest** - Comprehensive integration testing pipeline.
+- **Swagger JSDoc/UI** - Interactive, self-updating API documentation.
+
+---
+
+## Installation & Local Setup
+
+**1. Clone the repository and install dependencies:**
+```bash
+npm install
+```
+
+**2. Configure Environment Variables:**
+Copy the example file and update it with your actual connection details.
 ```bash
 cp .env.example .env
 ```
-Ensure your `.env` contains:
-```env
-MONGO_URI=mongodb://mongodb:27017/multi-tenant-booking
-PORT=5000
-JWT_SECRET=your_super_secret_jwt_key
-NODE_ENV=production
-```
 
-### 2. Boot the Cluster
-Use Docker Compose to build and start both the API and the MongoDB instance in detached mode:
+| Variable | Description | Example Value |
+| :--- | :--- | :--- |
+| `PORT` | The HTTP port the server will bind to | `5000` |
+| `MONGO_URI` | Your MongoDB connection string | `mongodb://localhost:27017/multi-tenant-booking` |
+| `JWT_SECRET` | Secret key for signing JWT cookies | `your_super_secret_jwt_key` |
+| `NODE_ENV` | Application environment state | `development` |
+
+**3. Boot the Server:**
 ```bash
-docker compose up -d --build
+npm run dev
 ```
-*The API will be accessible at `http://localhost:5000`.*
 
-### 3. API Documentation
-Once running, interactive Swagger documentation is exposed at:
-👉 **http://localhost:5000/api-docs**
+---
 
-### 4. Tearing Down
-To stop and remove the containers, networks, and volumes:
+## Troubleshooting: How to Clear Blocked Ports on Linux
+
+> [!TIP]
+> If you encounter an `EADDRINUSE` error indicating that `:::5000` is already in use, it means a previous Node.js process crashed or was sent to the background without properly releasing the port.
+
+On Linux, you can instantly terminate whatever is blocking your port using the `fuser` command:
+
 ```bash
-docker compose down
+fuser -k 5000/tcp
 ```
+**How it works:** 
+- `fuser` identifies the Process ID (PID) currently squatting on TCP port 5000.
+- The `-k` (kill) flag sends a `SIGKILL` signal directly to that stale process, instantly freeing up the port so you can start your development server again.
 
-## Running the Test Suite
-Four comprehensive test suites are provided in the `/tests` directory. While the environment is running, execute:
-```bash
-# Verify End-to-End API flows
-bash tests/run-tests.sh
+---
 
-# Verify comprehensive QA scenarios
-bash tests/qa-test.sh
+## API Endpoints Overview
 
-# Verify Role-Based Security overrides
-bash tests/rbac-test.sh
+Once the server is running, you can interact with the API or view the detailed Swagger documentation at `http://localhost:5000/api-docs` or via the production URL at `https://calendeee.habibullah.dev/api-docs`.
 
-# Verify core Domain Logic (Availability Engine)
-npx ts-node tests/test-engine.ts
-```
+### Auth
+- `POST /api/auth/register` - Provision a new tenant/organization & Admin.
+- `POST /api/auth/employee` - Onboard a standard employee.
+- `POST /api/auth/login` - Authenticate and receive an HTTP-Only cookie.
+- `POST /api/auth/logout` - Clear the session cookie.
+
+### Organizations & Members
+- `GET /api/organizations` - Fetch standard tenant operational config.
+- `PUT /api/organizations` - Update tenant working hours & timezone (Admin only).
+- `GET /api/organizations/me` - Fetch my organization details.
+- `GET /api/members` - List all users within the tenant.
+
+### Resources
+- `POST /api/resources` - Create a bookable asset with mandatory buffer times.
+- `GET /api/resources` - List all assets in the organization.
+
+### Bookings & Availability Engine
+- `GET /api/bookings/availability/:resourceId?date=YYYY-MM-DD` - Dynamically calculate open time blocks.
+- `POST /api/bookings` - Attempt a transactional booking.
+- `GET /api/bookings/my` - List all personal bookings.
+- `DELETE /api/bookings/:id` - Cancel a booking securely.

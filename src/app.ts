@@ -26,6 +26,13 @@ app.use(morgan('dev'));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Yahoo! Backend server is running.'
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
