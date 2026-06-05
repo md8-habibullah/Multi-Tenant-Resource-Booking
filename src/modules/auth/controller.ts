@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from './service';
-import { registerSchema, loginSchema } from './validation';
+import { registerSchema, loginSchema, registerEmployeeSchema } from './validation';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -20,6 +20,19 @@ export class AuthController {
       res.status(400).json({
         error: error.message
       });
+    }
+  }
+
+  static async registerEmployee(req: Request, res: Response) {
+    const data = registerEmployeeSchema.parse(req.body);
+    try {
+      const result = await AuthService.registerEmployee(data);
+      res.status(201).json({
+        token: result.token,
+        user: { id: result.user._id, email: result.user.email, role: result.user.role }
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   }
 

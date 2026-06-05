@@ -6,12 +6,16 @@ import authRoutes from './modules/auth/routes';
 import organizationRoutes from './modules/organizations/routes';
 import resourceRoutes from './modules/resources/routes';
 import bookingRoutes from './modules/bookings/routes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/swagger';
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.get('/health', (req, res) => {
