@@ -50,8 +50,8 @@ src
 
 This project was architected, built, and tested entirely on a Linux-based operating system. Ensure you have the following installed before proceeding with local development:
 
-- **Node.js** (v18+)
-- **TypeScript** (v5+)
+- **Node.js** (v26+)
+- **TypeScript** (v6+)
 - **MongoDB** (Local instance or Atlas URI)
 
 **Core Engineering Stack:**
