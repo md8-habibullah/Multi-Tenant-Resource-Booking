@@ -10,6 +10,8 @@
 
 **Demo access:** Email: admin@admin.dev && Password: admin12345
 
+**Development OS:** LINUX   (If you have any issues you faced in dev mode, so plz contact with ownner)
+
 ---
 
 ## Core Architectural Highlights
