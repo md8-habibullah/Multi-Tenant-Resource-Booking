@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
-import { connectDB } from './src/config/database';
-import { Organization } from './src/modules/organizations/model';
-import { Resource } from './src/modules/resources/model';
-import { Booking } from './src/modules/bookings/model';
-import { User, Role } from './src/modules/auth/model';
-import { BookingService } from './src/modules/bookings/service';
+import { connectDB } from '../src/config/database';
+import { Organization } from '../src/modules/organizations/model';
+import { Resource } from '../src/modules/resources/model';
+import { Booking } from '../src/modules/bookings/model';
+import { User, Role } from '../src/modules/auth/model';
+import { BookingService } from '../src/modules/bookings/service';
 import dotenv from 'dotenv';
 import { DateTime } from 'luxon';
 
