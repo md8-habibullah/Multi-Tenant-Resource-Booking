@@ -4,9 +4,9 @@
 [![API Docs](https://img.shields.io/badge/API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger)](https://calendeee.habibullah.dev/api-docs)
 [![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)]()
 
-**Live Production URL:** [https://calendeee.habibullah.dev/](https://calendeee.habibullah.dev/)
+**Live Production URL:** [https://calendeee.habibullah.dev](https://calendeee.habibullah.dev)
 
-**Live API Documentation:** [https://calendeee.habibullah.dev/api-docs/](https://calendeee.habibullah.dev/api-docs/)
+**Live API Documentation:** [https://calendeee.habibullah.dev/api-docs](https://calendeee.habibullah.dev/api-docs)
 
 **Demo access:** Email: admin@admin.dev && Password: admin12345
 
