@@ -6,6 +6,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   let token = req.cookies?.token;
 
   if (!token) {
+    console.log('No token provided'); // for debugging pourpose
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
@@ -13,7 +14,10 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
   }
 
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: No token provided' });
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: No token provided'
+    });
   }
 
   try {
@@ -26,18 +30,27 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized: Invalid token'
+    });
   }
 };
 
 export const requireRole = (role: Role) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized'
+      });
     }
 
     if (req.user.role !== role) {
-      return res.status(403).json({ success: false, error: 'Forbidden: Insufficient permissions' });
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden: Insufficient permissions'
+      });
     }
 
     next();
